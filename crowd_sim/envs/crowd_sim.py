@@ -9,7 +9,7 @@ from numpy.linalg import norm
 from crowd_sim.envs.utils.human import Human
 from crowd_sim.envs.utils.info import *
 from crowd_sim.envs.utils.utils import point_to_segment_dist
-
+from .generateRandomPositions import generateRandomPositions
 
 class CrowdSim(gym.Env):
     metadata = {'render.modes': ['human']}
@@ -100,8 +100,12 @@ class CrowdSim(gym.Env):
             for i in range(human_num):
                 self.humans.append(self.generate_square_crossing_human())
         elif rule == 'circle_crossing':
-            print("###$$$###$$$### Hemlo circle")
-            humanPosHc = [[(-7.5,-1),(7.5,-1)],[(0,7.5),(0,-7.5)],[(-7.5,1),(1,-7.5)],[(-1,7.5),(1,-7.5)]]
+            print("###$$$###$$$###Circle Crossing:")
+            ##### Case-1
+            # humanPosHc = [[(-7.5,-1),(7.5,-1)],[(0,7.5),(0,-7.5)],[(-7.5,1),(1,-7.5)],[(-1,7.5),(1,-7.5)]]
+            ##### Case-2 overtaking condition
+            human = Human(self.config, 'humans')
+            humanPos = generateRandomPositions(human_num,human.radius)
             self.humans = []
             for i in range(human_num):
                    # if i < 2:
@@ -109,7 +113,7 @@ class CrowdSim(gym.Env):
                    # else:
                    # human = self.generate_square_crossing_human()
                    human = Human(self.config, 'humans')
-                   [(px,py),(gx,gy)] = humanPosHc[i]
+                   [(px,py),(gx,gy)] = humanPos[i]
                    human.set(px, py, gx, gy, 0, 0, 0)
                    self.humans.append(human)
             
@@ -297,7 +301,8 @@ class CrowdSim(gym.Env):
         else:
             counter_offset = {'train': self.case_capacity['val'] + self.case_capacity['test'],
                               'val': 0, 'test': self.case_capacity['val']}
-            self.robot.set(0, -self.circle_radius, 0, self.circle_radius, 0, 0, np.pi / 2)
+            # self.robot.set(0, -6, 7, 0, 0, 0, np.pi / 2)
+            self.robot.set(-7.5, 1, 7, 1, 0, 0, np.pi / 2)
             if self.case_counter[phase] >= 0:
                 np.random.seed(counter_offset[phase] + self.case_counter[phase])
                 if phase in ['train', 'val']:
@@ -522,7 +527,7 @@ class CrowdSim(gym.Env):
             ax.add_collection(lc)
             # add robot and its goal
             robot_positions = [state[0].position for state in self.states]
-            goal = mlines.Line2D([0], [4], color=goal_color, marker='*', linestyle='None', markersize=15, label='Goal')
+            goal = mlines.Line2D([7], [1], color=goal_color, marker='*', linestyle='None', markersize=15, label='Goal')
             robot = plt.Circle(robot_positions[0], self.robot.radius, fill=True, color=robot_color)
             ax.add_artist(robot)
             ax.add_artist(goal)
