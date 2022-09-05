@@ -8,9 +8,10 @@ from matplotlib import patches
 from numpy.linalg import norm
 from crowd_sim.envs.utils.human import Human
 from crowd_sim.envs.utils.info import *
+from crowd_sim.envs.utils.robot import Robot
 from crowd_sim.envs.utils.utils import point_to_segment_dist
 from .generateRandomPositions import generateRandomPositions
-
+from .generateRandomRobotPositions import generateRandomRobotPositions
 class CrowdSim(gym.Env):
     metadata = {'render.modes': ['human']}
 
@@ -44,6 +45,8 @@ class CrowdSim(gym.Env):
         self.square_width = None
         self.circle_radius = None
         self.human_num = None
+        self.human_radius = None
+        self.robot_radius = None
         # for visualization
         self.states = None
         self.action_values = None
@@ -58,6 +61,8 @@ class CrowdSim(gym.Env):
         self.collision_penalty = config.getfloat('reward', 'collision_penalty')
         self.discomfort_dist = config.getfloat('reward', 'discomfort_dist')
         self.discomfort_penalty_factor = config.getfloat('reward', 'discomfort_penalty_factor')
+        self.robot_radius = config.getfloat('robot','radius')
+        # self.human_radius = config.getfloat('human','radius')
         if self.config.get('humans', 'policy') == 'orca':
             self.case_capacity = {'train': np.iinfo(np.uint32).max - 2000, 'val': 1000, 'test': 1000}
             self.case_size = {'train': np.iinfo(np.uint32).max - 2000, 'val': config.getint('env', 'val_size'),
@@ -302,7 +307,9 @@ class CrowdSim(gym.Env):
             counter_offset = {'train': self.case_capacity['val'] + self.case_capacity['test'],
                               'val': 0, 'test': self.case_capacity['val']}
             # self.robot.set(0, -6, 7, 0, 0, 0, np.pi / 2)
-            self.robot.set(-7.5, 1, 7, 1, 0, 0, np.pi / 2)
+            robotPos = generateRandomRobotPositions(1,self.robot_radius)
+            print(robotPos)
+            self.robot.set(robotPos[0][0][0], robotPos[0][0][1], robotPos[0][1][0], robotPos[0][1][1], 0, 0, np.pi / 2)
             if self.case_counter[phase] >= 0:
                 np.random.seed(counter_offset[phase] + self.case_counter[phase])
                 if phase in ['train', 'val']:
@@ -525,9 +532,13 @@ class CrowdSim(gym.Env):
             ax.set_xlabel('x(m)', fontsize=16)
             ax.set_ylabel('y(m)', fontsize=16)
             ax.add_collection(lc)
+            print(self.humans)
+            print(self.robot)
             # add robot and its goal
             robot_positions = [state[0].position for state in self.states]
-            goal = mlines.Line2D([7], [1], color=goal_color, marker='*', linestyle='None', markersize=15, label='Goal')
+            goal = mlines.Line2D([self.robot.gx], [self.robot.gy], color=goal_color, marker='*', linestyle='None', markersize=15, label='Goal')
+            # for human in self.humans:
+            #     ax.add_patch(plt.Circle((human.gx,human.gy), 0.3, color='r'))
             robot = plt.Circle(robot_positions[0], self.robot.radius, fill=True, color=robot_color)
             ax.add_artist(robot)
             ax.add_artist(goal)
