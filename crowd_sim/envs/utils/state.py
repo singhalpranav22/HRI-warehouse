@@ -1,3 +1,4 @@
+import json
 class FullState(object):
     def __init__(self, px, py, vx, vy, radius, gx, gy, v_pref, theta):
         self.px = px
@@ -20,6 +21,21 @@ class FullState(object):
     def __str__(self):
         return ' '.join([str(x) for x in [self.px, self.py, self.vx, self.vy, self.radius, self.gx, self.gy,
                                           self.v_pref, self.theta]])
+    def toDictionary(self):
+        dict = {
+            'px' : self.px,
+            'py' : self.py,
+            'vx' : self.vx,
+            'vy' : self.vy,
+            'radius' : self.radius,
+            'gx' : self.gx,
+            'gy' : self.gy,
+            'v_pref' : self.v_pref,
+            'theta' : self.theta
+        }
+        jsonString = json.dumps(dict)
+        print('Json string here========',jsonString)
+        return jsonString
 
 
 class ObservableState(object):

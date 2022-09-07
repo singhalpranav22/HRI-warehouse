@@ -16,13 +16,13 @@ def generateRandomPositions(human_nums,human_radius):
             # generate random source and goal positions
             xSource = round(random.uniform(-8,8), 1)
             ySource = round(random.uniform(-8,8), 1)
-            while ((-8<=xSource<=-2 and -8<=ySource<=-2) or (-8<=xSource<=-2 and 2<=ySource<=8) or (2<=xSource<=8 and -8<=ySource<=-2) or (2<=xSource<=8 and 2<=ySource<=8)):
+            while ((-8<=xSource<=-1.5 and -8<=ySource<=-1.5) or (-8<=xSource<=-1.5 and 1.5<=ySource<=8) or (1.5<=xSource<=8 and -8<=ySource<=-1.5) or (1.5<=xSource<=8 and 1.5<=ySource<=8)):
                 print(xSource,ySource)
                 xSource = round(random.uniform(-8,8), 1)
                 ySource = round(random.uniform(-8,8), 1)
             xGoal = round(random.uniform(-8,8), 1)
             yGoal = round(random.uniform(-8,8), 1)
-            while ((-8<=xGoal<=-2 and -8<=yGoal<=-2) or (-8<=xGoal<=-2 and 2<=yGoal<=8) or (2<=xGoal<=8 and -8<=yGoal<=-2) or (2<=xGoal<=8 and 2<=yGoal<=8)):
+            while ((-8<=xGoal<=-1.5 and -8<=yGoal<=-1.5) or (-8<=xGoal<=-1.5 and 1.5<=yGoal<=8) or (1.5<=xGoal<=8 and -8<=yGoal<=-1.5) or (1.5<=xGoal<=8 and 1.5<=yGoal<=8)):
                 xGoal = round(random.uniform(-8,8), 1)
                 yGoal = round(random.uniform(-8,8), 1)
             collide = False

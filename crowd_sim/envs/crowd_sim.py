@@ -12,6 +12,8 @@ from crowd_sim.envs.utils.robot import Robot
 from crowd_sim.envs.utils.utils import point_to_segment_dist
 from .generateRandomPositions import generateRandomPositions
 from .generateRandomRobotPositions import generateRandomRobotPositions
+import csv
+import os
 class CrowdSim(gym.Env):
     metadata = {'render.modes': ['human']}
 
@@ -47,10 +49,14 @@ class CrowdSim(gym.Env):
         self.human_num = None
         self.human_radius = None
         self.robot_radius = None
+        self.robot_num = 1
         # for visualization
         self.states = None
         self.action_values = None
         self.attention_weights = None
+        self.data = []
+        print('Look out for me=======',os.system('pwd'))
+
 
     def configure(self, config):
         self.config = config
@@ -389,7 +395,7 @@ class CrowdSim(gym.Env):
                 break
             elif closest_dist < dmin:
                 dmin = closest_dist
-
+        
         # collision detection between humans
         human_num = len(self.humans)
         for i in range(human_num):
@@ -404,19 +410,22 @@ class CrowdSim(gym.Env):
         # check if reaching the goal
         end_position = np.array(self.robot.compute_position(action, self.time_step))
         reaching_goal = norm(end_position - np.array(self.robot.get_goal_position())) < self.robot.radius
-
+        isCsvRequired = False
         if self.global_time >= self.time_limit - 1:
             reward = 0
             done = True
             info = Timeout()
+            isCsvRequired = True
         elif collision:
             reward = self.collision_penalty
             done = True
             info = Collision()
+            isCsvRequired = True
         elif reaching_goal:
             reward = self.success_reward
             done = True
             info = ReachGoal()
+            isCsvRequired = False
         elif dmin < self.discomfort_dist:
             # only penalize agent for getting too close if it's visible
             # adjust the reward based on FPS
@@ -428,14 +437,44 @@ class CrowdSim(gym.Env):
             done = False
             info = Nothing()
 
+        if isCsvRequired:
+            print("&&&&&&&&",self.data)
+            header = ['time']
+            for i in range(self.robot_num):
+                header.append(f'robot{i+1}')
+            for i in range(self.human_num):
+                header.append(f'human{i+1}')
+            self.writer = None
+            files = os.listdir('testcases')
+            lastFileNum = 1
+            for file in files:
+                if len(file)>5:
+                    currFileNum = int(file[-5])
+                    lastFileNum = max(lastFileNum,currFileNum)
+            lastFileNum += 1
+            self.csvFileName = f'testcases/testcase{lastFileNum}.csv'
+            with open(f'testcases/testcase{lastFileNum}.csv', 'w', encoding='UTF8') as f:
+                self.writer = csv.writer(f)
+                self.writer.writerow(header)
+                self.writer.writerows(self.data)
+
+          
+
         if update:
+            # csv generation
+            row = [self.global_time]
+            robotState = self.robot.get_full_state()
+            row.append(robotState.toDictionary)
+            for human in self.humans:
+                humanState = human.get_full_state()
+                row.append(humanState.toDictionary)
+            self.data.append(row)
             # store state, action value and attention weights
             self.states.append([self.robot.get_full_state(), [human.get_full_state() for human in self.humans]])
             if hasattr(self.robot.policy, 'action_values'):
                 self.action_values.append(self.robot.policy.action_values)
             if hasattr(self.robot.policy, 'get_attention_weights'):
                 self.attention_weights.append(self.robot.policy.get_attention_weights())
-
             # update all agents
             self.robot.step(action)
             for i, human_action in enumerate(human_actions):
@@ -537,8 +576,9 @@ class CrowdSim(gym.Env):
             # add robot and its goal
             robot_positions = [state[0].position for state in self.states]
             goal = mlines.Line2D([self.robot.gx], [self.robot.gy], color=goal_color, marker='*', linestyle='None', markersize=15, label='Goal')
-            # for human in self.humans:
-            #     ax.add_patch(plt.Circle((human.gx,human.gy), 0.3, color='r'))
+            print(self.humans)
+            for human in self.humans:
+                ax.add_patch(plt.Circle((human.gx,human.gy), 0.2, edgecolor="black",linewidth=3,ls='-'))
             robot = plt.Circle(robot_positions[0], self.robot.radius, fill=True, color=robot_color)
             ax.add_artist(robot)
             ax.add_artist(goal)
