@@ -34,7 +34,7 @@ class FullState(object):
             'theta' : self.theta
         }
         jsonString = json.dumps(dict)
-        print('Json string here========',jsonString)
+        # print('Json string here========',jsonString)
         return jsonString
 
 

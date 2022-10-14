@@ -25,6 +25,7 @@ class ValueNetwork(nn.Module):
         self.value_network = mlp(input_dim, mlp_dims)
 
     def forward(self, state):
+        # input is the join state
         value = self.value_network(state)
         return value
 
@@ -147,8 +148,10 @@ class CADRL(Policy):
             self.build_action_space(state.self_state.v_pref)
 
         probability = np.random.random()
+        # exploration
         if self.phase == 'train' and probability < self.epsilon:
             max_action = self.action_space[np.random.choice(len(self.action_space))]
+        # exploiatation
         else:
             self.action_values = list()
             max_min_value = float('-inf')
@@ -156,6 +159,7 @@ class CADRL(Policy):
             for action in self.action_space:
                 next_self_state = self.propagate(state.self_state, action)
                 ob, reward, done, info = self.env.onestep_lookahead(action)
+                ####### doubt
                 batch_next_states = torch.cat([torch.Tensor([next_self_state + next_human_state]).to(self.device)
                                               for next_human_state in ob], dim=0)
                 # VALUE UPDATE
@@ -166,7 +170,7 @@ class CADRL(Policy):
                 if min_value > max_min_value:
                     max_min_value = min_value
                     max_action = action
-
+        ########## why transforming, why used??????
         if self.phase == 'train':
             self.last_state = self.transform(state)
 
@@ -181,9 +185,11 @@ class CADRL(Policy):
         """
         assert len(state.human_states) == 1
         state = torch.Tensor(state.self_state + state.human_states[0]).to(self.device)
+        ###### doubt
         state = self.rotate(state.unsqueeze(0)).squeeze(dim=0)
         return state
 
+    #### doubtttt
     def rotate(self, state):
         """
         Transform the coordinate to agent-centric.
@@ -192,6 +198,7 @@ class CADRL(Policy):
         """
         # 'px', 'py', 'vx', 'vy', 'radius', 'gx', 'gy', 'v_pref', 'theta', 'px1', 'py1', 'vx1', 'vy1', 'radius1'
         #  0     1      2     3      4        5     6      7         8       9     10      11     12       13
+        #### training batch doubt
         batch = state.shape[0]
         dx = (state[:, 5] - state[:, 0]).reshape((batch, -1))
         dy = (state[:, 6] - state[:, 1]).reshape((batch, -1))

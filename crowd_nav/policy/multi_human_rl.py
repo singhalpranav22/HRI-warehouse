@@ -116,13 +116,18 @@ class MultiHumanRL(CADRL):
         for human in human_states:
             other_humans = np.concatenate([np.array([(other_human.px, other_human.py, other_human.vx, other_human.vy)])
                                          for other_human in human_states if other_human != human], axis=0)
+            ###### relative x and y coords
             other_px = other_humans[:, 0] - human.px
             other_py = other_humans[:, 1] - human.py
             # new x-axis is in the direction of human's velocity
             human_velocity_angle = np.arctan2(human.vy, human.vx)
             other_human_orientation = np.arctan2(other_py, other_px)
+            ##### relative angle for new cooordinate
             rotation = other_human_orientation - human_velocity_angle
+            ##### norm of (x1-x2)^2 + (y1-y2)^2
             distance = np.linalg.norm([other_px, other_py], axis=0)
+
+            ##### r cos 0 and r sin 0
             other_px = np.cos(rotation) * distance
             other_py = np.sin(rotation) * distance
 
@@ -134,11 +139,14 @@ class MultiHumanRL(CADRL):
             other_y_index[other_y_index < 0] = float('-inf')
             other_y_index[other_y_index >= self.cell_num] = float('-inf')
             grid_indices = self.cell_num * other_y_index + other_x_index
+            #### grid indices = x + 4*y
             occupancy_map = np.isin(range(self.cell_num ** 2), grid_indices)
+            ####### what is om channel size
             if self.om_channel_size == 1:
                 occupancy_maps.append([occupancy_map.astype(int)])
             else:
                 # calculate relative velocity for other agents
+                ############### Doubt
                 other_human_velocity_angles = np.arctan2(other_humans[:, 3], other_humans[:, 2])
                 rotation = other_human_velocity_angles - human_velocity_angle
                 speed = np.linalg.norm(other_humans[:, 2:4], axis=1)

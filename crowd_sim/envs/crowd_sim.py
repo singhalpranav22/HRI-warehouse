@@ -12,6 +12,7 @@ from crowd_sim.envs.utils.robot import Robot
 from crowd_sim.envs.utils.utils import point_to_segment_dist
 from .generateRandomPositions import generateRandomPositions
 from .generateRandomRobotPositions import generateRandomRobotPositions
+from .utils.utils import isIntersectionCrowded,isIntersectionCrossing
 import csv
 import os
 class CrowdSim(gym.Env):
@@ -55,7 +56,7 @@ class CrowdSim(gym.Env):
         self.action_values = None
         self.attention_weights = None
         self.data = []
-        print('Look out for me=======',os.system('pwd'))
+        # print('Look out for me=======',os.system('pwd'))
 
 
     def configure(self, config):
@@ -106,12 +107,12 @@ class CrowdSim(gym.Env):
        
         # initial min separation distance to avoid danger penalty at beginning
         if rule == 'square_crossing':
-            print("###$$$###$$$### Hemlo square")
+            # print("###$$$###$$$### Hemlo square")
             self.humans = []
             for i in range(human_num):
                 self.humans.append(self.generate_square_crossing_human())
         elif rule == 'circle_crossing':
-            print("###$$$###$$$###Circle Crossing:")
+            # print("###$$$###$$$###Circle Crossing:")
             ##### Case-1
             # humanPosHc = [[(-7.5,-1),(7.5,-1)],[(0,7.5),(0,-7.5)],[(-7.5,1),(1,-7.5)],[(-1,7.5),(1,-7.5)]]
             ##### Case-2 overtaking condition
@@ -131,7 +132,7 @@ class CrowdSim(gym.Env):
             # for i in range(human_num):
             #     self.humans.append(self.generate_circle_crossing_human())
         elif rule == 'mixed': 
-            print("###$$$###$$$### Hemlo mixed")
+            # print("###$$$###$$$### Hemlo mixed")
             # mix different raining simulation with certain distribution
             static_human_num = {0: 0.05, 1: 0.2, 2: 0.2, 3: 0.3, 4: 0.1, 5: 0.15}
             dynamic_human_num = {1: 0.3, 2: 0.3, 3: 0.2, 4: 0.1, 5: 0.1}
@@ -175,7 +176,7 @@ class CrowdSim(gym.Env):
                 # the first 2 two humans will be in the circle crossing scenarios
                 # the rest humans will have a random starting and end position
                 ### Position and goals array for humans
-                print("###$$$###$$$### Hemlo")
+                # print("###$$$###$$$### Hemlo")
                 humanPosHc = [[(-7.5,-1),(7.5,-1)],[(0,7.5),(0,-7.5)],[(-7.5,1),(7.5,1)],[(-1,7.5),(1,7.5)]]
                 for i in range(human_num):
                     # if i < 2:
@@ -258,7 +259,7 @@ class CrowdSim(gym.Env):
         sim = rvo2.PyRVOSimulator(self.time_step, *params, 0.3, 1)
         l1 = sim.addObstacle([(-2, 8), (-2, 2),(-2,2)])
         l2 = sim.addObstacle([(-8, -2), (-2, -2),(-2,-2)])
-        print("########",l1,l2)
+        # print("########",l1,l2)
         sim.processObstacles()
         sim.addAgent(self.robot.get_position(), *params, self.robot.radius, self.robot.v_pref,
                      self.robot.get_velocity())
@@ -314,7 +315,7 @@ class CrowdSim(gym.Env):
                               'val': 0, 'test': self.case_capacity['val']}
             # self.robot.set(0, -6, 7, 0, 0, 0, np.pi / 2)
             robotPos = generateRandomRobotPositions(1,self.robot_radius)
-            print(robotPos)
+            # print(robotPos)
             self.robot.set(robotPos[0][0][0], robotPos[0][0][1], robotPos[0][1][0], robotPos[0][1][1], 0, 0, np.pi / 2)
             if self.case_counter[phase] >= 0:
                 np.random.seed(counter_offset[phase] + self.case_counter[phase])
@@ -372,6 +373,13 @@ class CrowdSim(gym.Env):
                 ob += [self.robot.get_observable_state()]
             # print("########",human.act(ob))
             human_actions.append(human.act(ob))
+        intersectionCrowded = isIntersectionCrowded(self.humans,[self.robot])
+        if intersectionCrowded:
+            for human in self.humans:
+                isCrossing = isIntersectionCrossing(human)
+                if isCrossing:
+                    pass
+
 
         # collision detection
         dmin = float('inf')
@@ -438,7 +446,7 @@ class CrowdSim(gym.Env):
             info = Nothing()
 
         if isCsvRequired:
-            print("&&&&&&&&",self.data)
+            # print("&&&&&&&&",self.data)
             header = ['time']
             for i in range(self.robot_num):
                 header.append(f'robot{i+1}')
@@ -446,7 +454,7 @@ class CrowdSim(gym.Env):
                 header.append(f'human{i+1}')
             self.writer = None
             files = os.listdir('testcases')
-            lastFileNum = 1
+            lastFileNum = 0
             for file in files:
                 if len(file)>5:
                     currFileNum = int(file[-5])
@@ -464,10 +472,10 @@ class CrowdSim(gym.Env):
             # csv generation
             row = [self.global_time]
             robotState = self.robot.get_full_state()
-            row.append(robotState.toDictionary)
+            row.append(robotState.toDictionary())
             for human in self.humans:
                 humanState = human.get_full_state()
-                row.append(humanState.toDictionary)
+                row.append(humanState.toDictionary())
             self.data.append(row)
             # store state, action value and attention weights
             self.states.append([self.robot.get_full_state(), [human.get_full_state() for human in self.humans]])
@@ -571,12 +579,12 @@ class CrowdSim(gym.Env):
             ax.set_xlabel('x(m)', fontsize=16)
             ax.set_ylabel('y(m)', fontsize=16)
             ax.add_collection(lc)
-            print(self.humans)
-            print(self.robot)
+            # print(self.humans)
+            # print(self.robot)
             # add robot and its goal
             robot_positions = [state[0].position for state in self.states]
             goal = mlines.Line2D([self.robot.gx], [self.robot.gy], color=goal_color, marker='*', linestyle='None', markersize=15, label='Goal')
-            print(self.humans)
+            # print(self.humans)
             for human in self.humans:
                 ax.add_patch(plt.Circle((human.gx,human.gy), 0.2, edgecolor="black",linewidth=3,ls='-'))
             robot = plt.Circle(robot_positions[0], self.robot.radius, fill=True, color=robot_color)
